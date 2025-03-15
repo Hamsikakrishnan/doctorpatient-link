@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { Calendar, FileText, MessageSquare, Languages } from 'lucide-react';
 import { Prescription, translateText } from '../utils/api';
-import { toast } from '../components/ui/toast';
+import { toast } from '../hooks/use-toast';
 
 interface PrescriptionCardProps {
   prescription: Prescription;

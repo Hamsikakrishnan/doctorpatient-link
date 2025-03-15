@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import PatientCard from '../components/PatientCard';
 import { useAuth } from '../context/AuthContext';
 import { fetchPatientsByDoctor, fetchDoctorById, Patient, Doctor } from '../utils/api';
 import { UserRound, Search, ClipboardList, FileText } from 'lucide-react';
-import { toast } from '../components/ui/toast';
+import { toast } from '../hooks/use-toast';
 
 const DoctorDashboard: React.FC = () => {
   const { user } = useAuth();

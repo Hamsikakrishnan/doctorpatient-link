@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { toast } from '../components/ui/toast';
+import { toast } from '../hooks/use-toast';
 import { User, Lock, Hospital, Stethoscope, UserRound } from 'lucide-react';
 
 const LoginForm: React.FC = () => {

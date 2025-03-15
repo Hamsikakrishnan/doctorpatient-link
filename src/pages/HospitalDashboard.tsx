@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import DoctorCard from '../components/DoctorCard';
@@ -6,7 +5,7 @@ import PatientCard from '../components/PatientCard';
 import { useAuth } from '../context/AuthContext';
 import { fetchDoctors, fetchPatients, Doctor, Patient } from '../utils/api';
 import { Users, UserRound, Plus, Search, Stethoscope } from 'lucide-react';
-import { toast } from '../components/ui/toast';
+import { toast } from '../hooks/use-toast';
 
 const HospitalDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -42,7 +41,6 @@ const HospitalDashboard: React.FC = () => {
   }, []);
 
   const handleCreateNew = () => {
-    // This would open a modal or navigate to a creation form in a real app
     toast({
       title: 'Feature coming soon',
       description: `Create new ${activeTab === 'doctors' ? 'doctor' : 'patient'} functionality will be available soon`,
