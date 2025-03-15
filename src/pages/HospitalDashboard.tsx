@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import DoctorCard from '../components/DoctorCard';
 import PatientCard from '../components/PatientCard';
+import PatientRegistrationForm from '../components/PatientRegistrationForm';
 import { useAuth } from '../context/AuthContext';
 import { fetchDoctors, fetchPatients, Doctor, Patient } from '../utils/api';
 import { Users, UserRound, Plus, Search, Stethoscope } from 'lucide-react';
@@ -14,6 +16,7 @@ const HospitalDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'doctors' | 'patients'>('doctors');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isPatientFormOpen, setIsPatientFormOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -41,9 +44,32 @@ const HospitalDashboard: React.FC = () => {
   }, []);
 
   const handleCreateNew = () => {
+    if (activeTab === 'patients') {
+      setIsPatientFormOpen(true);
+    } else {
+      toast({
+        title: 'Feature coming soon',
+        description: 'Create new doctor functionality will be available soon',
+      });
+    }
+  };
+
+  const handlePatientSubmit = (data: any) => {
+    // In a real application, this would be an API call to create a patient
+    const newPatient: Patient = {
+      id: `p${patients.length + 1}`,
+      name: data.name,
+      age: Number(data.age),
+      gender: data.gender,
+      doctorId: data.doctorId,
+      medicalHistory: data.medicalHistory,
+      profileImage: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop",
+    };
+    
+    setPatients([...patients, newPatient]);
     toast({
-      title: 'Feature coming soon',
-      description: `Create new ${activeTab === 'doctors' ? 'doctor' : 'patient'} functionality will be available soon`,
+      title: 'Success',
+      description: `Patient ${data.name} has been created successfully`,
     });
   };
 
@@ -163,6 +189,13 @@ const HospitalDashboard: React.FC = () => {
           </div>
         )}
       </main>
+
+      <PatientRegistrationForm 
+        isOpen={isPatientFormOpen}
+        onClose={() => setIsPatientFormOpen(false)}
+        onSubmit={handlePatientSubmit}
+        doctors={doctors}
+      />
     </div>
   );
 };

@@ -60,7 +60,7 @@ const doctors: Doctor[] = [
   }
 ];
 
-const patients: Patient[] = [
+let patients: Patient[] = [
   {
     id: "p1",
     name: "John Doe",
@@ -146,6 +146,25 @@ export const fetchDoctors = async (): Promise<Doctor[]> => {
 export const fetchPatients = async (): Promise<Patient[]> => {
   await new Promise(resolve => setTimeout(resolve, 500));
   return patients;
+};
+
+export const createPatient = async (patientData: Omit<Patient, 'id'>): Promise<Patient> => {
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  const newPatient: Patient = {
+    id: `p${patients.length + 4}`, // Generate a new ID
+    ...patientData
+  };
+  
+  patients = [...patients, newPatient];
+  
+  // Update the doctor's patients array
+  const doctorIndex = doctors.findIndex(doctor => doctor.id === patientData.doctorId);
+  if (doctorIndex !== -1) {
+    doctors[doctorIndex].patients.push(newPatient.id);
+  }
+  
+  return newPatient;
 };
 
 export const fetchPatientsByDoctor = async (doctorId: string): Promise<Patient[]> => {
