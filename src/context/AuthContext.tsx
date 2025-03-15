@@ -1,0 +1,100 @@
+
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+type UserRole = 'hospital' | 'doctor' | 'patient';
+
+type User = {
+  id: string;
+  name: string;
+  role: UserRole;
+  profileImage?: string;
+};
+
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => void;
+  isAuthenticated: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user is stored in localStorage (simulating persistence)
+    const storedUser = localStorage.getItem('healthcareUser');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setIsLoading(false);
+  }, []);
+
+  // Mock login function - in a real app this would call the API
+  const login = async (username: string, password: string) => {
+    setIsLoading(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Mock login logic (would be replaced with actual API calls)
+      let mockUser: User | null = null;
+      
+      // This is just for development/demo purposes
+      if (username === 'hospital' && password === 'password') {
+        mockUser = { id: '1', name: 'City Hospital Admin', role: 'hospital' };
+        navigate('/hospital-dashboard');
+      } else if (username === 'doctor' && password === 'password') {
+        mockUser = { id: '2', name: 'Dr. Jane Smith', role: 'doctor' };
+        navigate('/doctor-dashboard');
+      } else if (username === 'patient' && password === 'password') {
+        mockUser = { id: '3', name: 'John Doe', role: 'patient' };
+        navigate('/patient-dashboard');
+      } else {
+        throw new Error('Invalid credentials');
+      }
+      
+      setUser(mockUser);
+      localStorage.setItem('healthcareUser', JSON.stringify(mockUser));
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('healthcareUser');
+    navigate('/');
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        login,
+        logout,
+        isAuthenticated: !!user,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
