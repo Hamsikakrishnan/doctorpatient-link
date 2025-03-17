@@ -44,9 +44,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Check if API keys are configured
       const mongodbUri = getConfigKey('MONGODB_URI');
-      const authUrl = getConfigKey('AUTHENTICATION_URL');
+      const geminiKey = getConfigKey('GEMINI_API_KEY');
       
-      if (!mongodbUri || !authUrl) {
+      if (!mongodbUri || !geminiKey) {
         toast({
           title: "Configuration Required",
           description: "Please set up your API keys before logging in.",
@@ -54,9 +54,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         throw new Error('API keys not configured');
       }
-      
-      // In a real app, this would use the authUrl to authenticate
-      // For demo purposes, we'll still use the mock authentication
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));

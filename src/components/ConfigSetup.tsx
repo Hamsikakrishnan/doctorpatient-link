@@ -14,7 +14,6 @@ interface ConfigSetupProps {
 const ConfigSetup: React.FC<ConfigSetupProps> = ({ onComplete }) => {
   const [open, setOpen] = useState(false);
   const [mongodbUri, setMongodbUri] = useState(getConfigKey('MONGODB_URI') || '');
-  const [authUrl, setAuthUrl] = useState(getConfigKey('AUTHENTICATION_URL') || '');
   const [geminiKey, setGeminiKey] = useState(getConfigKey('GEMINI_API_KEY') || '');
   const [isConfigured, setIsConfigured] = useState(false);
 
@@ -23,24 +22,21 @@ const ConfigSetup: React.FC<ConfigSetupProps> = ({ onComplete }) => {
     
     // Check if we already have configuration
     const hasMongodbUri = !!getConfigKey('MONGODB_URI');
-    const hasAuthUrl = !!getConfigKey('AUTHENTICATION_URL');
     const hasGeminiKey = !!getConfigKey('GEMINI_API_KEY');
     
     setMongodbUri(getConfigKey('MONGODB_URI') || '');
-    setAuthUrl(getConfigKey('AUTHENTICATION_URL') || '');
     setGeminiKey(getConfigKey('GEMINI_API_KEY') || '');
     
-    setIsConfigured(hasMongodbUri && hasAuthUrl && hasGeminiKey);
+    setIsConfigured(hasMongodbUri && hasGeminiKey);
     
     // Open dialog if we're missing configuration
-    if (!(hasMongodbUri && hasAuthUrl && hasGeminiKey)) {
+    if (!(hasMongodbUri && hasGeminiKey)) {
       setOpen(true);
     }
   }, []);
 
   const saveConfiguration = () => {
     setConfigKey('MONGODB_URI', mongodbUri);
-    setConfigKey('AUTHENTICATION_URL', authUrl);
     setConfigKey('GEMINI_API_KEY', geminiKey);
     
     setIsConfigured(true);
@@ -75,16 +71,6 @@ const ConfigSetup: React.FC<ConfigSetupProps> = ({ onComplete }) => {
                 value={mongodbUri}
                 onChange={(e) => setMongodbUri(e.target.value)}
                 placeholder="mongodb+srv://username:password@cluster.mongodb.net"
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="authUrl">Authentication URL</Label>
-              <Input
-                id="authUrl"
-                value={authUrl}
-                onChange={(e) => setAuthUrl(e.target.value)}
-                placeholder="https://your-auth-service.com"
               />
             </div>
             
