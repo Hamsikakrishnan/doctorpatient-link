@@ -1,5 +1,5 @@
-
 // In a real application, this would interact with your MongoDB backend
+import { getConfigKey } from '../config/keys';
 
 export interface Doctor {
   id: string;
@@ -138,17 +138,27 @@ const labTests: LabTest[] = [
 
 // API Functions
 export const fetchDoctors = async (): Promise<Doctor[]> => {
+  // In a real app, this would use the MongoDB URI from config
+  const mongodbUri = getConfigKey('MONGODB_URI');
+  console.log('Using MongoDB URI:', mongodbUri);
+  
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
   return doctors;
 };
 
 export const fetchPatients = async (): Promise<Patient[]> => {
+  const mongodbUri = getConfigKey('MONGODB_URI');
+  console.log('Using MongoDB URI:', mongodbUri);
+  
   await new Promise(resolve => setTimeout(resolve, 500));
   return patients;
 };
 
 export const createPatient = async (patientData: Omit<Patient, 'id'>): Promise<Patient> => {
+  const mongodbUri = getConfigKey('MONGODB_URI');
+  console.log('Using MongoDB URI:', mongodbUri);
+  
   await new Promise(resolve => setTimeout(resolve, 500));
   
   const newPatient: Patient = {
@@ -192,27 +202,5 @@ export const fetchLabTestsByPatient = async (patientId: string): Promise<LabTest
   return labTests.filter(test => test.patientId === patientId);
 };
 
-// This would be a call to an LLM API in a real app
-export const translateText = async (text: string, targetLanguage: string): Promise<string> => {
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // This is just a mock response - in a real app, this would call an actual
-  // translation API or LLM model
-  return `[Translated to ${targetLanguage}] ${text}`;
-};
-
-// Mock chatbot response
-export const getChatbotResponse = async (message: string): Promise<string> => {
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Very simple pattern matching for demo purposes
-  if (message.toLowerCase().includes('diet')) {
-    return "For a heart-healthy diet, focus on fruits, vegetables, whole grains, and lean proteins. Limit sodium, sugar, and saturated fats. Try to eat fish twice a week and choose foods high in fiber.";
-  } else if (message.toLowerCase().includes('exercise')) {
-    return "Regular physical activity is important. Aim for at least 150 minutes of moderate-intensity exercise per week. This could include brisk walking, swimming, or cycling. Always consult your doctor before starting a new exercise program.";
-  } else if (message.toLowerCase().includes('medication') || message.toLowerCase().includes('medicine')) {
-    return "Always take medications as prescribed by your doctor. Don't skip doses or stop taking a medication without consulting your healthcare provider first. Keep a list of all your medications with you.";
-  } else {
-    return "I'm your healthcare assistant. I can provide general information about diet, exercise, and medication. For specific medical advice, please consult your doctor.";
-  }
-};
+// Use the new gemini-api.ts for these functions instead
+export { translateText, getChatbotResponse } from './gemini-api';

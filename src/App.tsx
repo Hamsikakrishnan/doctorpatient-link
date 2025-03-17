@@ -11,6 +11,7 @@ import HospitalDashboard from "./pages/HospitalDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import PatientDashboard from "./pages/PatientDashboard";
 import NotFound from "./pages/NotFound";
+import ConfigSetup from "./components/ConfigSetup";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <ConfigSetup />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/hospital-dashboard" element={<HospitalDashboard />} />

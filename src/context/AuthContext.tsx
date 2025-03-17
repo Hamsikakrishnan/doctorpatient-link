@@ -1,6 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getConfigKey } from '../config/keys';
+import { toast } from '../hooks/use-toast';
 
 type UserRole = 'hospital' | 'doctor' | 'patient';
 
@@ -35,11 +37,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
-  // Mock login function - in a real app this would call the API
+  // Login function that checks for API configuration
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     
     try {
+      // Check if API keys are configured
+      const mongodbUri = getConfigKey('MONGODB_URI');
+      const authUrl = getConfigKey('AUTHENTICATION_URL');
+      
+      if (!mongodbUri || !authUrl) {
+        toast({
+          title: "Configuration Required",
+          description: "Please set up your API keys before logging in.",
+          variant: "destructive"
+        });
+        throw new Error('API keys not configured');
+      }
+      
+      // In a real app, this would use the authUrl to authenticate
+      // For demo purposes, we'll still use the mock authentication
+      
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       

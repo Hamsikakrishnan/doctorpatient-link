@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User } from 'lucide-react';
-import { getChatbotResponse } from '../utils/api';
+import { getChatbotResponse } from '../utils/gemini-api';
 
 const ChatBot: React.FC = () => {
   const [messages, setMessages] = useState<{ text: string; sender: 'user' | 'bot' }[]>([
@@ -32,7 +32,7 @@ const ChatBot: React.FC = () => {
       setMessages(prev => [...prev, { text: botResponse, sender: 'bot' }]);
     } catch (error) {
       setMessages(prev => [...prev, { 
-        text: "I'm sorry, I'm having trouble connecting. Please try again later.", 
+        text: "I'm sorry, I'm having trouble connecting. Please try again later or check your API configuration.", 
         sender: 'bot' 
       }]);
     } finally {
