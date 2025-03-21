@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import DoctorCard from '../components/DoctorCard';
 import PatientCard from '../components/PatientCard';
 import PatientRegistrationForm from '../components/PatientRegistrationForm';
+import DoctorRegistrationForm from '../components/DoctorRegistrationForm';
 import { useAuth } from '../context/AuthContext';
-import { fetchDoctors, fetchPatients, Doctor, Patient } from '../utils/api';
+import { fetchDoctors, fetchPatients, Doctor, Patient, createPatient, createDoctor } from '../utils/api';
 import { Users, UserRound, Plus, Search, Stethoscope } from 'lucide-react';
 import { toast } from '../hooks/use-toast';
 
@@ -17,6 +17,7 @@ const HospitalDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'doctors' | 'patients'>('doctors');
   const [searchTerm, setSearchTerm] = useState('');
   const [isPatientFormOpen, setIsPatientFormOpen] = useState(false);
+  const [isDoctorFormOpen, setIsDoctorFormOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -47,30 +48,50 @@ const HospitalDashboard: React.FC = () => {
     if (activeTab === 'patients') {
       setIsPatientFormOpen(true);
     } else {
-      toast({
-        title: 'Feature coming soon',
-        description: 'Create new doctor functionality will be available soon',
-      });
+      setIsDoctorFormOpen(true);
     }
   };
 
-  const handlePatientSubmit = (data: any) => {
-    // In a real application, this would be an API call to create a patient
-    const newPatient: Patient = {
-      id: `p${patients.length + 1}`,
-      name: data.name,
-      age: Number(data.age),
-      gender: data.gender,
-      doctorId: data.doctorId,
-      medicalHistory: data.medicalHistory,
-      profileImage: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop",
-    };
-    
-    setPatients([...patients, newPatient]);
-    toast({
-      title: 'Success',
-      description: `Patient ${data.name} has been created successfully`,
-    });
+  const handlePatientSubmit = async (data: any) => {
+    try {
+      setIsLoading(true);
+      const newPatient = await createPatient(data);
+      setPatients(prevPatients => [...prevPatients, newPatient]);
+      toast({
+        title: 'Success',
+        description: `Patient ${data.name} has been created successfully with username "${data.username}"`,
+      });
+    } catch (error) {
+      console.error('Failed to create patient:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create patient',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDoctorSubmit = async (data: any) => {
+    try {
+      setIsLoading(true);
+      const newDoctor = await createDoctor(data);
+      setDoctors(prevDoctors => [...prevDoctors, newDoctor]);
+      toast({
+        title: 'Success',
+        description: `Dr. ${data.name} has been created successfully with username "${data.username}"`,
+      });
+    } catch (error) {
+      console.error('Failed to create doctor:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create doctor',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const filteredDoctors = doctors.filter(doctor => 
@@ -195,6 +216,12 @@ const HospitalDashboard: React.FC = () => {
         onClose={() => setIsPatientFormOpen(false)}
         onSubmit={handlePatientSubmit}
         doctors={doctors}
+      />
+
+      <DoctorRegistrationForm 
+        isOpen={isDoctorFormOpen}
+        onClose={() => setIsDoctorFormOpen(false)}
+        onSubmit={handleDoctorSubmit}
       />
     </div>
   );

@@ -3,89 +3,76 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { X } from 'lucide-react';
-import { toast } from '../hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { Button } from './ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from './ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Input } from './ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from './ui/dialog';
+import { Textarea } from './ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Doctor } from '../utils/api';
+import { X } from 'lucide-react';
 
-const patientSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  age: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+// Form schema with validation
+const formSchema = z.object({
+  name: z.string().min(3, { message: "Name must be at least 3 characters" }),
+  age: z.string().refine(val => !isNaN(Number(val)) && Number(val) > 0, {
     message: "Age must be a positive number",
   }),
-  gender: z.string().min(1, 'Gender is required'),
-  medicalHistory: z.string(),
-  doctorId: z.string().min(1, 'Doctor must be selected'),
+  gender: z.string().min(1, { message: "Gender is required" }),
+  doctorId: z.string().min(1, { message: "Assigned doctor is required" }),
+  medicalHistory: z.string().optional(),
 });
-
-type PatientFormValues = z.infer<typeof patientSchema>;
 
 interface PatientRegistrationFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: PatientFormValues) => void;
+  onSubmit: (data: any) => void;
   doctors: Doctor[];
 }
 
-const PatientRegistrationForm: React.FC<PatientRegistrationFormProps> = ({
-  isOpen,
-  onClose,
+const PatientRegistrationForm: React.FC<PatientRegistrationFormProps> = ({ 
+  isOpen, 
+  onClose, 
   onSubmit,
-  doctors,
+  doctors
 }) => {
-  const form = useForm<PatientFormValues>({
-    resolver: zodResolver(patientSchema),
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      age: '',
-      gender: '',
-      medicalHistory: '',
-      doctorId: '',
+      name: "",
+      age: "",
+      gender: "",
+      doctorId: "",
+      medicalHistory: "",
     },
   });
 
-  const handleSubmit = (data: PatientFormValues) => {
-    try {
-      onSubmit(data);
-      form.reset();
-      onClose();
-      toast({
-        title: 'Success',
-        description: 'Patient registered successfully',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to register patient',
-        variant: 'destructive',
-      });
-    }
+  const handleSubmit = (data: z.infer<typeof formSchema>) => {
+    // Generate username and password based on first name
+    const firstName = data.name.split(' ')[0].toLowerCase();
+    
+    const patientData = {
+      ...data,
+      age: Number(data.age),
+      username: firstName,
+      password: firstName,
+    };
+    
+    onSubmit(patientData);
+    form.reset();
+    onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Register New Patient</DialogTitle>
-          <DialogDescription>
-            Create a new patient profile and assign a doctor
-          </DialogDescription>
+          <DialogTitle className="flex justify-between items-center">
+            Register New Patient
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-6 w-6 rounded-full">
+              <X className="h-4 w-4" />
+            </Button>
+          </DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
@@ -95,7 +82,7 @@ const PatientRegistrationForm: React.FC<PatientRegistrationFormProps> = ({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>Patient Name</FormLabel>
                   <FormControl>
                     <Input placeholder="John Doe" {...field} />
                   </FormControl>
@@ -112,7 +99,7 @@ const PatientRegistrationForm: React.FC<PatientRegistrationFormProps> = ({
                   <FormItem>
                     <FormLabel>Age</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input placeholder="35" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -125,17 +112,21 @@ const PatientRegistrationForm: React.FC<PatientRegistrationFormProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Gender</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        {...field}
-                      >
-                        <option value="">Select gender</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </FormControl>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -147,20 +138,24 @@ const PatientRegistrationForm: React.FC<PatientRegistrationFormProps> = ({
               name="doctorId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Assign Doctor</FormLabel>
-                  <FormControl>
-                    <select
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      {...field}
-                    >
-                      <option value="">Select a doctor</option>
-                      {doctors.map((doctor) => (
-                        <option key={doctor.id} value={doctor.id}>
-                          {doctor.name} - {doctor.specialty}
-                        </option>
+                  <FormLabel>Assigned Doctor</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Assign a doctor" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {doctors.map(doctor => (
+                        <SelectItem key={doctor.id} value={doctor.id}>
+                          {doctor.name} ({doctor.specialty})
+                        </SelectItem>
                       ))}
-                    </select>
-                  </FormControl>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -173,9 +168,8 @@ const PatientRegistrationForm: React.FC<PatientRegistrationFormProps> = ({
                 <FormItem>
                   <FormLabel>Medical History</FormLabel>
                   <FormControl>
-                    <textarea
-                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      placeholder="Enter any pre-existing conditions..."
+                    <Textarea 
+                      placeholder="Enter relevant medical history or leave blank"
                       {...field}
                     />
                   </FormControl>
@@ -184,18 +178,15 @@ const PatientRegistrationForm: React.FC<PatientRegistrationFormProps> = ({
               )}
             />
             
-            <div className="flex justify-end space-x-2 pt-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onClose}
-                className="gap-1"
-              >
-                <X className="h-4 w-4" />
-                Cancel
-              </Button>
-              <Button type="submit">Register Patient</Button>
+            <div className="pt-3">
+              <p className="text-sm text-muted-foreground mb-4">
+                Username and password will automatically be generated based on the patient's first name.
+              </p>
             </div>
+            
+            <DialogFooter>
+              <Button type="submit">Register Patient</Button>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

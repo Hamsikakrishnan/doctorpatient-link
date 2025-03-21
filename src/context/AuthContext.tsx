@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getConfigKey } from '../config/keys';
@@ -65,10 +64,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (username === 'hospital' && password === 'password') {
         mockUser = { id: '1', name: 'City Hospital Admin', role: 'hospital' };
         navigate('/hospital-dashboard');
-      } else if (username === 'doctor' && password === 'password') {
+      } else if (username === 'doctor' && password === 'password' || 
+                (username === 'jane' && password === 'jane') || 
+                (username === 'michael' && password === 'michael')) {
         mockUser = { id: '2', name: 'Dr. Jane Smith', role: 'doctor' };
         navigate('/doctor-dashboard');
-      } else if (username === 'patient' && password === 'password') {
+      } else if (username === 'patient' && password === 'password' || 
+                (username === 'john' && password === 'john')) {
         mockUser = { id: '3', name: 'John Doe', role: 'patient' };
         navigate('/patient-dashboard');
       } else {

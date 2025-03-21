@@ -7,6 +7,8 @@ export interface Doctor {
   specialty: string;
   profileImage?: string;
   patients: string[];
+  username?: string;
+  password?: string;
 }
 
 export interface Patient {
@@ -17,6 +19,8 @@ export interface Patient {
   doctorId: string;
   profileImage?: string;
   medicalHistory: string;
+  username?: string;
+  password?: string;
 }
 
 export interface Prescription {
@@ -49,14 +53,18 @@ const doctors: Doctor[] = [
     name: "Dr. Jane Smith",
     specialty: "Cardiologist",
     profileImage: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=200&auto=format&fit=crop",
-    patients: ["p1", "p2"]
+    patients: ["p1", "p2"],
+    username: "jane",
+    password: "jane"
   },
   {
     id: "d2",
     name: "Dr. Michael Chen",
     specialty: "Neurologist",
     profileImage: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=200&auto=format&fit=crop",
-    patients: ["p3"]
+    patients: ["p3"],
+    username: "michael",
+    password: "michael"
   }
 ];
 
@@ -68,7 +76,9 @@ let patients: Patient[] = [
     gender: "Male",
     doctorId: "d1",
     profileImage: "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?q=80&w=200&auto=format&fit=crop",
-    medicalHistory: "Hypertension, Type 2 Diabetes"
+    medicalHistory: "Hypertension, Type 2 Diabetes",
+    username: "john",
+    password: "john"
   },
   {
     id: "p2",
@@ -77,7 +87,9 @@ let patients: Patient[] = [
     gender: "Female",
     doctorId: "d1",
     profileImage: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop",
-    medicalHistory: "Asthma"
+    medicalHistory: "Asthma",
+    username: "sarah",
+    password: "sarah"
   },
   {
     id: "p3",
@@ -86,7 +98,9 @@ let patients: Patient[] = [
     gender: "Male",
     doctorId: "d2",
     profileImage: "https://images.unsplash.com/photo-1552058544-f2b08422138a?q=80&w=200&auto=format&fit=crop",
-    medicalHistory: "Stroke (2018), Migraines"
+    medicalHistory: "Stroke (2018), Migraines",
+    username: "robert",
+    password: "robert"
   }
 ];
 
@@ -138,11 +152,9 @@ const labTests: LabTest[] = [
 
 // API Functions
 export const fetchDoctors = async (): Promise<Doctor[]> => {
-  // In a real app, this would use the MongoDB URI from config
   const mongodbUri = getConfigKey('MONGODB_URI');
   console.log('Using MongoDB URI:', mongodbUri);
   
-  // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
   return doctors;
 };
@@ -153,6 +165,23 @@ export const fetchPatients = async (): Promise<Patient[]> => {
   
   await new Promise(resolve => setTimeout(resolve, 500));
   return patients;
+};
+
+export const createDoctor = async (doctorData: Omit<Doctor, 'id' | 'patients'>): Promise<Doctor> => {
+  const mongodbUri = getConfigKey('MONGODB_URI');
+  console.log('Using MongoDB URI:', mongodbUri);
+  
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  const newDoctor: Doctor = {
+    id: `d${doctors.length + 3}`, // Generate a new ID
+    ...doctorData,
+    patients: [] // New doctors start with no patients
+  };
+  
+  doctors.push(newDoctor);
+  
+  return newDoctor;
 };
 
 export const createPatient = async (patientData: Omit<Patient, 'id'>): Promise<Patient> => {

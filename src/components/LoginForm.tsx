@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../hooks/use-toast';
@@ -35,6 +34,12 @@ const LoginForm: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const demoCredentials = {
+    hospital: { username: 'hospital', password: 'password' },
+    doctor: { username: 'doctor', password: 'password' },
+    patient: { username: 'patient', password: 'password' }
   };
 
   return (
@@ -136,8 +141,15 @@ const LoginForm: React.FC = () => {
       </form>
 
       <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600">
-          For demo purposes, use username: "{selectedRole}" and password: "password"
+        <p className="text-sm text-gray-600 mb-2">
+          For demo purposes, use:
+        </p>
+        <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+          <p><strong>Username:</strong> "{demoCredentials[selectedRole].username}"</p>
+          <p><strong>Password:</strong> "{demoCredentials[selectedRole].password}"</p>
+        </div>
+        <p className="text-xs text-gray-500 mt-3">
+          New users created in the system will use their first name as both username and password.
         </p>
       </div>
     </div>
