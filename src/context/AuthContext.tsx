@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getConfigKey } from '../config/keys';
@@ -36,22 +37,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
-  // Login function that checks for API configuration
+  // Login function with optional API keys check
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     
     try {
-      // Check if API keys are configured
+      // Check if API keys are configured - but make them optional
       const mongodbUri = getConfigKey('MONGODB_URI');
       const geminiKey = getConfigKey('GEMINI_API_KEY');
       
+      // Display a warning toast but don't block login if keys are missing
       if (!mongodbUri || !geminiKey) {
         toast({
-          title: "Configuration Required",
-          description: "Please set up your API keys before logging in.",
-          variant: "destructive"
+          title: "Note: API Keys Missing",
+          description: "Some features may be limited. Configure API keys in settings.",
+          variant: "default"
         });
-        throw new Error('API keys not configured');
       }
       
       // Simulate API call
