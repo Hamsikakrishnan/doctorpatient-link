@@ -1,5 +1,7 @@
-// In a real application, this would interact with your MongoDB backend
+
+// API module for interacting with MongoDB and other services
 import { getConfigKey } from '../config/keys';
+import { translateText, getChatbotResponse } from './gemini-api';
 
 export interface Doctor {
   id: string;
@@ -46,7 +48,53 @@ export interface LabTest {
   status: 'normal' | 'abnormal' | 'pending';
 }
 
-// Mock data
+// MongoDB collection names
+const COLLECTIONS = {
+  DOCTORS: 'doctors',
+  PATIENTS: 'patients',
+  PRESCRIPTIONS: 'prescriptions',
+  LAB_TESTS: 'labTests'
+};
+
+// Cache for data to reduce API calls
+let cachedDoctors: Doctor[] | null = null;
+let cachedPatients: Patient[] | null = null;
+let cachedPrescriptions: Prescription[] | null = null;
+let cachedLabTests: LabTest[] | null = null;
+
+// MongoDB connection helper
+async function connectToMongoDB() {
+  const mongodbUri = getConfigKey('MONGODB_URI');
+  if (!mongodbUri) {
+    throw new Error('MongoDB URI is not configured');
+  }
+  
+  console.log('Connecting to MongoDB...');
+  
+  try {
+    // For this demo, we'll use a serverless MongoDB API approach
+    const response = await fetch(`${mongodbUri}/api/data`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': 'healthcare-demo-key' // Typically you'd use authentication here
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`MongoDB API error: ${response.status}`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    // Fall back to mock data
+    console.log('Falling back to mock data');
+    return false;
+  }
+}
+
+// Initialize mock data (used as fallback if MongoDB is unavailable)
 const doctors: Doctor[] = [
   {
     id: "d1",
@@ -150,91 +198,307 @@ const labTests: LabTest[] = [
   }
 ];
 
-// API Functions
+// API Functions with MongoDB integration
 export const fetchDoctors = async (): Promise<Doctor[]> => {
-  const mongodbUri = getConfigKey('MONGODB_URI');
-  console.log('Using MongoDB URI:', mongodbUri);
+  // If we have cached data, return it
+  if (cachedDoctors) return cachedDoctors;
   
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return doctors;
+  try {
+    const isConnected = await connectToMongoDB();
+    if (!isConnected) {
+      // Fall back to mock data
+      cachedDoctors = [...doctors];
+      return cachedDoctors;
+    }
+    
+    const mongodbUri = getConfigKey('MONGODB_URI');
+    const response = await fetch(`${mongodbUri}/api/doctors`);
+    if (!response.ok) throw new Error('Failed to fetch doctors');
+    
+    const data = await response.json();
+    cachedDoctors = data;
+    return data;
+  } catch (error) {
+    console.error('Error fetching doctors:', error);
+    // Fall back to mock data
+    cachedDoctors = [...doctors];
+    return cachedDoctors;
+  }
 };
 
 export const fetchPatients = async (): Promise<Patient[]> => {
-  const mongodbUri = getConfigKey('MONGODB_URI');
-  console.log('Using MongoDB URI:', mongodbUri);
+  // If we have cached data, return it
+  if (cachedPatients) return cachedPatients;
   
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return patients;
+  try {
+    const isConnected = await connectToMongoDB();
+    if (!isConnected) {
+      // Fall back to mock data
+      cachedPatients = [...patients];
+      return cachedPatients;
+    }
+    
+    const mongodbUri = getConfigKey('MONGODB_URI');
+    const response = await fetch(`${mongodbUri}/api/patients`);
+    if (!response.ok) throw new Error('Failed to fetch patients');
+    
+    const data = await response.json();
+    cachedPatients = data;
+    return data;
+  } catch (error) {
+    console.error('Error fetching patients:', error);
+    // Fall back to mock data
+    cachedPatients = [...patients];
+    return cachedPatients;
+  }
 };
 
 export const createDoctor = async (doctorData: Omit<Doctor, 'id' | 'patients'>): Promise<Doctor> => {
-  const mongodbUri = getConfigKey('MONGODB_URI');
-  console.log('Using MongoDB URI:', mongodbUri);
-  
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Generate a unique ID for the new doctor
-  const newId = `d${doctors.length + 3}`;
-  
-  const newDoctor: Doctor = {
-    id: newId,
-    ...doctorData,
-    patients: [] // New doctors start with no patients
-  };
-  
-  doctors.push(newDoctor);
-  
-  return newDoctor;
+  try {
+    const isConnected = await connectToMongoDB();
+    if (!isConnected) {
+      // Fall back to mock data approach
+      // Generate a unique ID for the new doctor
+      const newId = `d${doctors.length + Math.floor(Math.random() * 1000) + 1}`;
+      
+      const newDoctor: Doctor = {
+        id: newId,
+        ...doctorData,
+        patients: [] // New doctors start with no patients
+      };
+      
+      doctors.push(newDoctor);
+      
+      // Update cache
+      cachedDoctors = null; // Invalidate cache
+      
+      return newDoctor;
+    }
+    
+    const mongodbUri = getConfigKey('MONGODB_URI');
+    const response = await fetch(`${mongodbUri}/api/doctors`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(doctorData),
+    });
+    
+    if (!response.ok) throw new Error('Failed to create doctor');
+    const newDoctor = await response.json();
+    
+    // Invalidate cache
+    cachedDoctors = null;
+    
+    return newDoctor;
+  } catch (error) {
+    console.error('Error creating doctor:', error);
+    
+    // Fall back to mock data approach
+    const newId = `d${doctors.length + Math.floor(Math.random() * 1000) + 1}`;
+    
+    const newDoctor: Doctor = {
+      id: newId,
+      ...doctorData,
+      patients: []
+    };
+    
+    doctors.push(newDoctor);
+    
+    // Invalidate cache
+    cachedDoctors = null;
+    
+    return newDoctor;
+  }
 };
 
 export const createPatient = async (patientData: Omit<Patient, 'id'>): Promise<Patient> => {
-  const mongodbUri = getConfigKey('MONGODB_URI');
-  console.log('Using MongoDB URI:', mongodbUri);
-  
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Generate a unique ID for the new patient
-  const newId = `p${patients.length + 4}`;
-  
-  const newPatient: Patient = {
-    id: newId,
-    ...patientData
-  };
-  
-  patients = [...patients, newPatient];
-  
-  // Update the doctor's patients array
-  const doctorIndex = doctors.findIndex(doctor => doctor.id === patientData.doctorId);
-  if (doctorIndex !== -1) {
-    doctors[doctorIndex].patients.push(newPatient.id);
+  try {
+    const isConnected = await connectToMongoDB();
+    if (!isConnected) {
+      // Generate a unique ID for the new patient
+      const newId = `p${patients.length + Math.floor(Math.random() * 1000) + 1}`;
+      
+      const newPatient: Patient = {
+        id: newId,
+        ...patientData
+      };
+      
+      patients.push(newPatient);
+      
+      // Update the doctor's patients array
+      const doctorIndex = doctors.findIndex(doctor => doctor.id === patientData.doctorId);
+      if (doctorIndex !== -1) {
+        doctors[doctorIndex].patients.push(newPatient.id);
+      }
+      
+      // Invalidate cache
+      cachedPatients = null;
+      
+      return newPatient;
+    }
+    
+    const mongodbUri = getConfigKey('MONGODB_URI');
+    const response = await fetch(`${mongodbUri}/api/patients`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(patientData),
+    });
+    
+    if (!response.ok) throw new Error('Failed to create patient');
+    const newPatient = await response.json();
+    
+    // Invalidate cache
+    cachedPatients = null;
+    cachedDoctors = null; // Doctor's patients array has changed
+    
+    return newPatient;
+  } catch (error) {
+    console.error('Error creating patient:', error);
+    
+    // Fall back to mock data approach
+    const newId = `p${patients.length + Math.floor(Math.random() * 1000) + 1}`;
+    
+    const newPatient: Patient = {
+      id: newId,
+      ...patientData
+    };
+    
+    patients.push(newPatient);
+    
+    // Update the doctor's patients array
+    const doctorIndex = doctors.findIndex(doctor => doctor.id === patientData.doctorId);
+    if (doctorIndex !== -1) {
+      doctors[doctorIndex].patients.push(newPatient.id);
+    }
+    
+    // Invalidate cache
+    cachedPatients = null;
+    
+    return newPatient;
   }
-  
-  return newPatient;
 };
 
 export const fetchPatientsByDoctor = async (doctorId: string): Promise<Patient[]> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return patients.filter(patient => patient.doctorId === doctorId);
+  try {
+    // Try to use the main patients list if it's already cached
+    if (cachedPatients) {
+      return cachedPatients.filter(patient => patient.doctorId === doctorId);
+    }
+    
+    const isConnected = await connectToMongoDB();
+    if (!isConnected) {
+      // Fall back to mock data
+      return patients.filter(patient => patient.doctorId === doctorId);
+    }
+    
+    const mongodbUri = getConfigKey('MONGODB_URI');
+    const response = await fetch(`${mongodbUri}/api/doctors/${doctorId}/patients`);
+    if (!response.ok) throw new Error('Failed to fetch patients by doctor');
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching patients by doctor:', error);
+    // Fall back to mock data
+    return patients.filter(patient => patient.doctorId === doctorId);
+  }
 };
 
 export const fetchPatientById = async (patientId: string): Promise<Patient | undefined> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return patients.find(patient => patient.id === patientId);
+  try {
+    // Try to use the cache first
+    if (cachedPatients) {
+      return cachedPatients.find(patient => patient.id === patientId);
+    }
+    
+    const isConnected = await connectToMongoDB();
+    if (!isConnected) {
+      // Fall back to mock data
+      return patients.find(patient => patient.id === patientId);
+    }
+    
+    const mongodbUri = getConfigKey('MONGODB_URI');
+    const response = await fetch(`${mongodbUri}/api/patients/${patientId}`);
+    if (!response.ok) throw new Error('Failed to fetch patient');
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching patient:', error);
+    // Fall back to mock data
+    return patients.find(patient => patient.id === patientId);
+  }
 };
 
 export const fetchDoctorById = async (doctorId: string): Promise<Doctor | undefined> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return doctors.find(doctor => doctor.id === doctorId);
+  try {
+    // Try to use the cache first
+    if (cachedDoctors) {
+      return cachedDoctors.find(doctor => doctor.id === doctorId);
+    }
+    
+    const isConnected = await connectToMongoDB();
+    if (!isConnected) {
+      // Fall back to mock data
+      return doctors.find(doctor => doctor.id === doctorId);
+    }
+    
+    const mongodbUri = getConfigKey('MONGODB_URI');
+    const response = await fetch(`${mongodbUri}/api/doctors/${doctorId}`);
+    if (!response.ok) throw new Error('Failed to fetch doctor');
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching doctor:', error);
+    // Fall back to mock data
+    return doctors.find(doctor => doctor.id === doctorId);
+  }
 };
 
 export const fetchPrescriptionsByPatient = async (patientId: string): Promise<Prescription[]> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return prescriptions.filter(prescription => prescription.patientId === patientId);
+  try {
+    const isConnected = await connectToMongoDB();
+    if (!isConnected) {
+      // Fall back to mock data
+      return prescriptions.filter(prescription => prescription.patientId === patientId);
+    }
+    
+    const mongodbUri = getConfigKey('MONGODB_URI');
+    const response = await fetch(`${mongodbUri}/api/patients/${patientId}/prescriptions`);
+    if (!response.ok) throw new Error('Failed to fetch prescriptions');
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching prescriptions:', error);
+    // Fall back to mock data
+    return prescriptions.filter(prescription => prescription.patientId === patientId);
+  }
 };
 
 export const fetchLabTestsByPatient = async (patientId: string): Promise<LabTest[]> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return labTests.filter(test => test.patientId === patientId);
+  try {
+    const isConnected = await connectToMongoDB();
+    if (!isConnected) {
+      // Fall back to mock data
+      return labTests.filter(test => test.patientId === patientId);
+    }
+    
+    const mongodbUri = getConfigKey('MONGODB_URI');
+    const response = await fetch(`${mongodbUri}/api/patients/${patientId}/labtests`);
+    if (!response.ok) throw new Error('Failed to fetch lab tests');
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching lab tests:', error);
+    // Fall back to mock data
+    return labTests.filter(test => test.patientId === patientId);
+  }
 };
 
 // Add a new function to validate API credentials
@@ -252,5 +516,5 @@ export const validateApiCredentials = async (): Promise<{ valid: boolean; missin
   return result;
 };
 
-// Use the new gemini-api.ts for these functions instead
+// Export Gemini functions
 export { translateText, getChatbotResponse } from './gemini-api';

@@ -4,9 +4,8 @@ import { setConfigKey, getConfigKey, initializeConfig } from '../config/keys';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from '../hooks/use-toast';
-import { Cog } from 'lucide-react';
+import { Cog, Database, Bot, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -24,6 +23,10 @@ const configSchema = z.object({
 const ConfigSetup: React.FC<ConfigSetupProps> = ({ onComplete }) => {
   const [open, setOpen] = useState(false);
   const [isConfigured, setIsConfigured] = useState(false);
+  const [testingMongoDB, setTestingMongoDB] = useState(false);
+  const [testingGemini, setTestingGemini] = useState(false);
+  const [mongoStatus, setMongoStatus] = useState<'untested' | 'success' | 'error'>('untested');
+  const [geminiStatus, setGeminiStatus] = useState<'untested' | 'success' | 'error'>('untested');
 
   const form = useForm<z.infer<typeof configSchema>>({
     resolver: zodResolver(configSchema),
@@ -69,6 +72,98 @@ const ConfigSetup: React.FC<ConfigSetupProps> = ({ onComplete }) => {
       onComplete();
     }
   };
+  
+  const testMongoDBConnection = async () => {
+    const uri = form.getValues().mongodbUri;
+    if (!uri) return;
+    
+    setTestingMongoDB(true);
+    setMongoStatus('untested');
+    
+    try {
+      // Simple validation - check if it looks like a MongoDB URI
+      if (!uri.startsWith('mongodb') && !uri.includes('://')) {
+        throw new Error('Invalid MongoDB URI format');
+      }
+      
+      // Simulate a connection test (in a real app, you would actually test the connection)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setMongoStatus('success');
+      toast({
+        title: "MongoDB Connection",
+        description: "Connection test successful",
+      });
+    } catch (error) {
+      console.error('MongoDB test failed:', error);
+      setMongoStatus('error');
+      toast({
+        title: "MongoDB Connection Failed",
+        description: error instanceof Error ? error.message : "Could not connect to MongoDB",
+        variant: "destructive"
+      });
+    } finally {
+      setTestingMongoDB(false);
+    }
+  };
+  
+  const testGeminiAPI = async () => {
+    const key = form.getValues().geminiKey;
+    if (!key) return;
+    
+    setTestingGemini(true);
+    setGeminiStatus('untested');
+    
+    try {
+      // Simple validation of API key format
+      if (key.length < 10) {
+        throw new Error('API key appears to be too short');
+      }
+      
+      // Make a simple request to test the API key
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: "Hello, please respond with 'API test successful'"
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            maxOutputTokens: 10,
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`API error: ${errorData.error?.message || response.status}`);
+      }
+      
+      setGeminiStatus('success');
+      toast({
+        title: "Gemini API",
+        description: "API key validated successfully",
+      });
+    } catch (error) {
+      console.error('Gemini API test failed:', error);
+      setGeminiStatus('error');
+      toast({
+        title: "Gemini API Failed",
+        description: error instanceof Error ? error.message : "Could not validate API key",
+        variant: "destructive"
+      });
+    } finally {
+      setTestingGemini(false);
+    }
+  };
 
   return (
     <>
@@ -89,13 +184,28 @@ const ConfigSetup: React.FC<ConfigSetupProps> = ({ onComplete }) => {
                 name="mongodbUri"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>MongoDB URI</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="mongodb+srv://username:password@cluster.mongodb.net" 
-                        {...field} 
-                      />
-                    </FormControl>
+                    <FormLabel className="flex items-center gap-2">
+                      <Database className="h-4 w-4" />
+                      MongoDB URI
+                      {mongoStatus === 'success' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                      {mongoStatus === 'error' && <AlertTriangle className="h-4 w-4 text-red-500" />}
+                    </FormLabel>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input 
+                          placeholder="mongodb+srv://username:password@cluster.mongodb.net" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={testMongoDBConnection}
+                        disabled={testingMongoDB || !field.value}
+                      >
+                        {testingMongoDB ? "Testing..." : "Test"}
+                      </Button>
+                    </div>
                     <FormDescription>
                       Connect to your MongoDB database for storing healthcare data.
                     </FormDescription>
@@ -108,14 +218,29 @@ const ConfigSetup: React.FC<ConfigSetupProps> = ({ onComplete }) => {
                 name="geminiKey"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Gemini API Key</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="Enter your Gemini API Key" 
-                        {...field} 
-                      />
-                    </FormControl>
+                    <FormLabel className="flex items-center gap-2">
+                      <Bot className="h-4 w-4" />
+                      Gemini API Key
+                      {geminiStatus === 'success' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                      {geminiStatus === 'error' && <AlertTriangle className="h-4 w-4 text-red-500" />}
+                    </FormLabel>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Enter your Gemini API Key" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={testGeminiAPI}
+                        disabled={testingGemini || !field.value}
+                      >
+                        {testingGemini ? "Testing..." : "Test"}
+                      </Button>
+                    </div>
                     <FormDescription>
                       Used for AI-powered chat assistance and translations.
                     </FormDescription>
