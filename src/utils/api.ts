@@ -1,3 +1,4 @@
+
 // In a real application, this would interact with your MongoDB backend
 import { getConfigKey } from '../config/keys';
 
@@ -173,8 +174,11 @@ export const createDoctor = async (doctorData: Omit<Doctor, 'id' | 'patients'>):
   
   await new Promise(resolve => setTimeout(resolve, 500));
   
+  // Generate a unique ID for the new doctor
+  const newId = `d${doctors.length + 3}`;
+  
   const newDoctor: Doctor = {
-    id: `d${doctors.length + 3}`, // Generate a new ID
+    id: newId,
     ...doctorData,
     patients: [] // New doctors start with no patients
   };
@@ -190,8 +194,11 @@ export const createPatient = async (patientData: Omit<Patient, 'id'>): Promise<P
   
   await new Promise(resolve => setTimeout(resolve, 500));
   
+  // Generate a unique ID for the new patient
+  const newId = `p${patients.length + 4}`;
+  
   const newPatient: Patient = {
-    id: `p${patients.length + 4}`, // Generate a new ID
+    id: newId,
     ...patientData
   };
   

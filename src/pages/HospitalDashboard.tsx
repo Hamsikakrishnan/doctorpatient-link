@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import DoctorCard from '../components/DoctorCard';
@@ -177,37 +178,41 @@ const HospitalDashboard: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <>
             {activeTab === 'doctors' ? (
-              filteredDoctors.length > 0 ? (
-                filteredDoctors.map(doctor => (
-                  <DoctorCard key={doctor.id} doctor={doctor} />
-                ))
-              ) : (
-                <div className="col-span-full text-center py-12">
-                  <Stethoscope className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                  <h3 className="text-lg font-medium text-gray-500">No doctors found</h3>
-                  <p className="text-gray-400 mt-1">
-                    {searchTerm ? 'Try a different search term' : 'Add a doctor to get started'}
-                  </p>
-                </div>
-              )
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredDoctors.length > 0 ? (
+                  filteredDoctors.map(doctor => (
+                    <DoctorCard key={doctor.id} doctor={doctor} />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-12">
+                    <Stethoscope className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                    <h3 className="text-lg font-medium text-gray-500">No doctors found</h3>
+                    <p className="text-gray-400 mt-1">
+                      {searchTerm ? 'Try a different search term' : 'Add a doctor to get started'}
+                    </p>
+                  </div>
+                )}
+              </div>
             ) : (
-              filteredPatients.length > 0 ? (
-                filteredPatients.map(patient => (
-                  <PatientCard key={patient.id} patient={patient} />
-                ))
-              ) : (
-                <div className="col-span-full text-center py-12">
-                  <UserRound className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                  <h3 className="text-lg font-medium text-gray-500">No patients found</h3>
-                  <p className="text-gray-400 mt-1">
-                    {searchTerm ? 'Try a different search term' : 'Add a patient to get started'}
-                  </p>
-                </div>
-              )
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredPatients.length > 0 ? (
+                  filteredPatients.map(patient => (
+                    <PatientCard key={patient.id} patient={patient} />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-12">
+                    <UserRound className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                    <h3 className="text-lg font-medium text-gray-500">No patients found</h3>
+                    <p className="text-gray-400 mt-1">
+                      {searchTerm ? 'Try a different search term' : 'Add a patient to get started'}
+                    </p>
+                  </div>
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
       </main>
 
