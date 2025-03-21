@@ -1,4 +1,3 @@
-
 // In a real application, this would interact with your MongoDB backend
 import { getConfigKey } from '../config/keys';
 
@@ -236,6 +235,21 @@ export const fetchPrescriptionsByPatient = async (patientId: string): Promise<Pr
 export const fetchLabTestsByPatient = async (patientId: string): Promise<LabTest[]> => {
   await new Promise(resolve => setTimeout(resolve, 500));
   return labTests.filter(test => test.patientId === patientId);
+};
+
+// Add a new function to validate API credentials
+export const validateApiCredentials = async (): Promise<{ valid: boolean; missing: string[] }> => {
+  const result = { valid: false, missing: [] as string[] };
+  
+  const mongodbUri = getConfigKey('MONGODB_URI');
+  const geminiKey = getConfigKey('GEMINI_API_KEY');
+  
+  if (!mongodbUri) result.missing.push('MongoDB URI');
+  if (!geminiKey) result.missing.push('Gemini API Key');
+  
+  result.valid = result.missing.length === 0;
+  
+  return result;
 };
 
 // Use the new gemini-api.ts for these functions instead

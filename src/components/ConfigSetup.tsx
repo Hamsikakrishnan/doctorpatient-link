@@ -6,16 +6,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from '../hooks/use-toast';
+import { Cog } from 'lucide-react';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 interface ConfigSetupProps {
   onComplete?: () => void;
 }
 
+const configSchema = z.object({
+  mongodbUri: z.string().min(1, "MongoDB URI is required"),
+  geminiKey: z.string().min(1, "Gemini API Key is required")
+});
+
 const ConfigSetup: React.FC<ConfigSetupProps> = ({ onComplete }) => {
   const [open, setOpen] = useState(false);
-  const [mongodbUri, setMongodbUri] = useState(getConfigKey('MONGODB_URI') || '');
-  const [geminiKey, setGeminiKey] = useState(getConfigKey('GEMINI_API_KEY') || '');
   const [isConfigured, setIsConfigured] = useState(false);
+
+  const form = useForm<z.infer<typeof configSchema>>({
+    resolver: zodResolver(configSchema),
+    defaultValues: {
+      mongodbUri: getConfigKey('MONGODB_URI') || '',
+      geminiKey: getConfigKey('GEMINI_API_KEY') || '',
+    },
+  });
 
   useEffect(() => {
     initializeConfig();
@@ -24,8 +40,10 @@ const ConfigSetup: React.FC<ConfigSetupProps> = ({ onComplete }) => {
     const hasMongodbUri = !!getConfigKey('MONGODB_URI');
     const hasGeminiKey = !!getConfigKey('GEMINI_API_KEY');
     
-    setMongodbUri(getConfigKey('MONGODB_URI') || '');
-    setGeminiKey(getConfigKey('GEMINI_API_KEY') || '');
+    form.reset({
+      mongodbUri: getConfigKey('MONGODB_URI') || '',
+      geminiKey: getConfigKey('GEMINI_API_KEY') || '',
+    });
     
     setIsConfigured(hasMongodbUri && hasGeminiKey);
     
@@ -33,11 +51,11 @@ const ConfigSetup: React.FC<ConfigSetupProps> = ({ onComplete }) => {
     if (!(hasMongodbUri && hasGeminiKey)) {
       setOpen(true);
     }
-  }, []);
+  }, [form]);
 
-  const saveConfiguration = () => {
-    setConfigKey('MONGODB_URI', mongodbUri);
-    setConfigKey('GEMINI_API_KEY', geminiKey);
+  const saveConfiguration = (data: z.infer<typeof configSchema>) => {
+    setConfigKey('MONGODB_URI', data.mongodbUri);
+    setConfigKey('GEMINI_API_KEY', data.geminiKey);
     
     setIsConfigured(true);
     setOpen(false);
@@ -57,51 +75,71 @@ const ConfigSetup: React.FC<ConfigSetupProps> = ({ onComplete }) => {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Healthcare System Configuration</DialogTitle>
+            <DialogTitle>API Credentials Setup</DialogTitle>
             <DialogDescription>
-              Enter your API keys and configuration values to connect the system to your services.
+              Enter your API keys to connect the healthcare system to your services.
+              These credentials will be stored securely in your browser.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="mongodbUri">MongoDB URI</Label>
-              <Input
-                id="mongodbUri"
-                value={mongodbUri}
-                onChange={(e) => setMongodbUri(e.target.value)}
-                placeholder="mongodb+srv://username:password@cluster.mongodb.net"
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(saveConfiguration)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="mongodbUri"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>MongoDB URI</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="mongodb+srv://username:password@cluster.mongodb.net" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Connect to your MongoDB database for storing healthcare data.
+                    </FormDescription>
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="geminiKey">Gemini API Key</Label>
-              <Input
-                id="geminiKey"
-                value={geminiKey}
-                onChange={(e) => setGeminiKey(e.target.value)}
-                placeholder="Enter your Gemini API Key"
-                type="password"
+              
+              <FormField
+                control={form.control}
+                name="geminiKey"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Gemini API Key</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password" 
+                        placeholder="Enter your Gemini API Key" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Used for AI-powered chat assistance and translations.
+                    </FormDescription>
+                  </FormItem>
+                )}
               />
-            </div>
-          </div>
-          
-          <div className="flex justify-end">
-            <Button onClick={saveConfiguration}>Save Configuration</Button>
-          </div>
+              
+              <div className="flex justify-end">
+                <Button type="submit">Save Configuration</Button>
+              </div>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
       
-      {isConfigured && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="absolute top-4 right-4"
-          onClick={() => setOpen(true)}
-        >
-          Configure API Keys
-        </Button>
-      )}
+      <Button
+        variant="outline"
+        size="sm"
+        className="fixed z-50 bottom-4 right-4 flex items-center gap-2 shadow-md"
+        onClick={() => setOpen(true)}
+      >
+        <Cog className="h-4 w-4" />
+        {isConfigured ? "Update API Keys" : "Configure API Keys"}
+      </Button>
     </>
   );
 };
