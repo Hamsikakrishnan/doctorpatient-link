@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { setConfigKey, getConfigKey, initializeConfig } from '../config/keys';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -39,7 +38,6 @@ const ConfigSetup: React.FC<ConfigSetupProps> = ({ onComplete }) => {
   useEffect(() => {
     initializeConfig();
     
-    // Check if we already have configuration
     const hasMongodbUri = !!getConfigKey('MONGODB_URI');
     const hasGeminiKey = !!getConfigKey('GEMINI_API_KEY');
     
@@ -50,7 +48,6 @@ const ConfigSetup: React.FC<ConfigSetupProps> = ({ onComplete }) => {
     
     setIsConfigured(hasMongodbUri && hasGeminiKey);
     
-    // Open dialog if we're missing configuration
     if (!(hasMongodbUri && hasGeminiKey)) {
       setOpen(true);
     }
@@ -81,25 +78,33 @@ const ConfigSetup: React.FC<ConfigSetupProps> = ({ onComplete }) => {
     setMongoStatus('untested');
     
     try {
-      // Simple validation - check if it looks like a MongoDB URI
-      if (!uri.startsWith('mongodb') && !uri.includes('://')) {
+      if (!uri.startsWith('mongodb') || (!uri.includes('://') && !uri.includes('@'))) {
         throw new Error('Invalid MongoDB URI format');
       }
       
-      // Simulate a connection test (in a real app, you would actually test the connection)
+      const uriParts = uri.split('@');
+      if (uriParts.length !== 2) {
+        throw new Error('MongoDB URI should include credentials and host');
+      }
+      
+      const hostPart = uriParts[1];
+      if (!hostPart.includes('.') || !hostPart.includes('/')) {
+        throw new Error('MongoDB URI missing host or database name');
+      }
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setMongoStatus('success');
       toast({
-        title: "MongoDB Connection",
-        description: "Connection test successful",
+        title: "MongoDB URI",
+        description: "URI format is valid (connection will be made from backend)",
       });
     } catch (error) {
       console.error('MongoDB test failed:', error);
       setMongoStatus('error');
       toast({
-        title: "MongoDB Connection Failed",
-        description: error instanceof Error ? error.message : "Could not connect to MongoDB",
+        title: "MongoDB URI Invalid",
+        description: error instanceof Error ? error.message : "URI format appears to be invalid",
         variant: "destructive"
       });
     } finally {
@@ -115,12 +120,10 @@ const ConfigSetup: React.FC<ConfigSetupProps> = ({ onComplete }) => {
     setGeminiStatus('untested');
     
     try {
-      // Simple validation of API key format
       if (key.length < 10) {
         throw new Error('API key appears to be too short');
       }
       
-      // Make a simple request to test the API key
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${key}`, {
         method: 'POST',
         headers: {

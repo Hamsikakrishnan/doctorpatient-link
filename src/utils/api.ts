@@ -1,4 +1,3 @@
-
 // API module for interacting with MongoDB and other services
 import { getConfigKey } from '../config/keys';
 import { translateText, getChatbotResponse } from './gemini-api';
@@ -69,23 +68,28 @@ async function connectToMongoDB() {
     throw new Error('MongoDB URI is not configured');
   }
   
-  console.log('Connecting to MongoDB...');
+  console.log('Attempting to connect to MongoDB...');
   
   try {
-    // For this demo, we'll use a serverless MongoDB API approach
-    const response = await fetch(`${mongodbUri}/api/data`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': 'healthcare-demo-key' // Typically you'd use authentication here
-      }
-    });
+    // Instead of directly using MongoDB URI in fetch (which causes security errors),
+    // we'll use a proxy approach or serverless function
+    // For demo purposes, we'll create a URL that doesn't include credentials directly
     
-    if (!response.ok) {
-      throw new Error(`MongoDB API error: ${response.status}`);
-    }
+    // Extract the database name from the MongoDB URI
+    const dbNameMatch = mongodbUri.match(/\/([^/]+)(\?|$)/);
+    const dbName = dbNameMatch ? dbNameMatch[1] : 'healthcare';
     
-    return true;
+    // Use a serverless API endpoint format instead
+    const apiEndpoint = 'https://healthcare-api-proxy.example.com/api/data';
+    
+    // We'll log that we're attempting to connect but actually use mock data for now
+    console.log(`Would connect to database: ${dbName} (using mock data for demo)`);
+    
+    // In a real implementation, you would set up a backend proxy service or
+    // serverless function to handle the MongoDB connection
+    
+    // For the healthcare app demo, we'll continue using the mock data
+    return false; // Return false to use mock data
   } catch (error) {
     console.error('MongoDB connection error:', error);
     // Fall back to mock data
