@@ -5,13 +5,14 @@ import PrescriptionCard from '../components/PrescriptionCard';
 import LabResultCard from '../components/LabResultCard';
 import ChatBot from '../components/ChatBot';
 import { useAuth } from '../context/AuthContext';
-import { fetchPrescriptionsByPatient, fetchLabTestsByPatient, fetchPatientById, Patient, Prescription, LabTest } from '../utils/api';
+import { fetchPrescriptionsByPatient, fetchLabTestsByPatient, fetchPatientById, fetchDoctorById, Patient, Prescription, LabTest, Doctor } from '../utils/api';
 import { UserRound, FileText, FlaskConical, MessageSquare } from 'lucide-react';
 import { toast } from '../hooks/use-toast';
 
 const PatientDashboard: React.FC = () => {
   const { user } = useAuth();
   const [patient, setPatient] = useState<Patient | null>(null);
+  const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [labTests, setLabTests] = useState<LabTest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,15 +33,26 @@ const PatientDashboard: React.FC = () => {
 
         // Use the logged-in patient's ID
         const patientId = user.id;
-        const [patientData, prescriptionsData, labTestsData] = await Promise.all([
-          fetchPatientById(patientId),
+        const patientData = await fetchPatientById(patientId);
+        
+        if (patientData) {
+          setPatient(patientData);
+          
+          // Also fetch the doctor information if we have a doctor ID
+          if (patientData.doctorId) {
+            const doctorData = await fetchDoctorById(patientData.doctorId);
+            if (doctorData) {
+              setDoctor(doctorData);
+            }
+          }
+        }
+        
+        // Fetch prescriptions and lab tests in parallel
+        const [prescriptionsData, labTestsData] = await Promise.all([
           fetchPrescriptionsByPatient(patientId),
           fetchLabTestsByPatient(patientId),
         ]);
         
-        if (patientData) {
-          setPatient(patientData);
-        }
         setPrescriptions(prescriptionsData);
         setLabTests(labTestsData);
       } catch (error) {
@@ -90,7 +102,7 @@ const PatientDashboard: React.FC = () => {
                   <div className="space-y-2">
                     <p className="text-sm">
                       <span className="font-medium text-gray-600">Doctor:</span>{' '}
-                      <span className="text-healthcare-700">{patient?.doctorName || "Dr. Jane Smith"}</span>
+                      <span className="text-healthcare-700">{doctor?.name || "Not assigned"}</span>
                     </p>
                     <p className="text-sm">
                       <span className="font-medium text-gray-600">Medical History:</span>{' '}
