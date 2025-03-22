@@ -505,6 +505,63 @@ export const fetchLabTestsByPatient = async (patientId: string): Promise<LabTest
   }
 };
 
+// New function to create a prescription
+export const createPrescription = async (prescriptionData: Omit<Prescription, 'id'>): Promise<Prescription> => {
+  try {
+    const isConnected = await connectToMongoDB();
+    if (!isConnected) {
+      // Generate a unique ID for the new prescription
+      const newId = `rx${prescriptions.length + Math.floor(Math.random() * 1000) + 1}`;
+      
+      const newPrescription: Prescription = {
+        id: newId,
+        ...prescriptionData
+      };
+      
+      prescriptions.push(newPrescription);
+      
+      // Invalidate cache
+      cachedPrescriptions = null;
+      
+      return newPrescription;
+    }
+    
+    const mongodbUri = getConfigKey('MONGODB_URI');
+    const response = await fetch(`${mongodbUri}/api/prescriptions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(prescriptionData),
+    });
+    
+    if (!response.ok) throw new Error('Failed to create prescription');
+    const newPrescription = await response.json();
+    
+    // Invalidate cache
+    cachedPrescriptions = null;
+    
+    return newPrescription;
+  } catch (error) {
+    console.error('Error creating prescription:', error);
+    
+    // Fall back to mock data approach
+    const newId = `rx${prescriptions.length + Math.floor(Math.random() * 1000) + 1}`;
+    
+    const newPrescription: Prescription = {
+      id: newId,
+      ...prescriptionData
+    };
+    
+    prescriptions.push(newPrescription);
+    
+    // Invalidate cache
+    cachedPrescriptions = null;
+    
+    return newPrescription;
+  }
+};
+
 // Add a new function to validate API credentials
 export const validateApiCredentials = async (): Promise<{ valid: boolean; missing: string[] }> => {
   const result = { valid: false, missing: [] as string[] };

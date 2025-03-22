@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import PatientCard from '../components/PatientCard';
+import PrescriptionForm from '../components/PrescriptionForm';
 import { useAuth } from '../context/AuthContext';
-import { fetchPatientsByDoctor, fetchDoctorById, Patient, Doctor } from '../utils/api';
+import { fetchPatientsByDoctor, fetchDoctorById, createPrescription, Patient, Doctor } from '../utils/api';
 import { UserRound, Search, ClipboardList, FileText } from 'lucide-react';
 import { toast } from '../hooks/use-toast';
 
@@ -59,11 +61,26 @@ const DoctorDashboard: React.FC = () => {
   };
 
   const handleNewPrescription = () => {
-    setShowPrescriptionForm(true);
-    toast({
-      title: 'Feature coming soon',
-      description: 'New prescription functionality will be available soon',
-    });
+    if (selectedPatient) {
+      setShowPrescriptionForm(true);
+    }
+  };
+
+  const handlePrescriptionSubmit = async (data: any) => {
+    try {
+      await createPrescription(data);
+      toast({
+        title: 'Success',
+        description: 'Prescription has been created successfully',
+      });
+    } catch (error) {
+      console.error('Failed to create prescription:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create prescription',
+        variant: 'destructive',
+      });
+    }
   };
 
   const filteredPatients = patients.filter(patient => 
@@ -163,13 +180,7 @@ const DoctorDashboard: React.FC = () => {
                     Medical Records
                   </h3>
                   <button
-                    onClick={() => {
-                      setShowPrescriptionForm(true);
-                      toast({
-                        title: 'Feature coming soon',
-                        description: 'New prescription functionality will be available soon',
-                      });
-                    }}
+                    onClick={handleNewPrescription}
                     className="bg-healthcare-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-healthcare-700 transition-colors flex items-center gap-2"
                   >
                     <FileText className="h-4 w-4" />
@@ -197,6 +208,15 @@ const DoctorDashboard: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {selectedPatient && (
+        <PrescriptionForm
+          isOpen={showPrescriptionForm}
+          onClose={() => setShowPrescriptionForm(false)}
+          onSubmit={handlePrescriptionSubmit}
+          patient={selectedPatient}
+        />
+      )}
     </div>
   );
 };

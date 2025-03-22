@@ -58,6 +58,8 @@ const PatientRegistrationForm: React.FC<PatientRegistrationFormProps> = ({
       password: firstName,
     };
     
+    console.log("Submitting patient data:", patientData);
+    
     onSubmit(patientData);
     form.reset();
     onClose();
