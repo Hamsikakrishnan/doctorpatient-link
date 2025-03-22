@@ -1,8 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getConfigKey } from '../config/keys';
 import { toast } from '../hooks/use-toast';
+import { fetchDoctors, fetchPatients } from '../utils/api';
 
 type UserRole = 'hospital' | 'doctor' | 'patient';
 
@@ -55,31 +55,79 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       }
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock login logic (would be replaced with actual API calls)
+      // First try to match against the static admin credentials
       let mockUser: User | null = null;
       
-      // This is just for development/demo purposes
       if (username === 'hospital' && password === 'password') {
         mockUser = { id: '1', name: 'City Hospital Admin', role: 'hospital' };
+        setUser(mockUser);
+        localStorage.setItem('healthcareUser', JSON.stringify(mockUser));
         navigate('/hospital-dashboard');
-      } else if (username === 'doctor' && password === 'password' || 
-                (username === 'jane' && password === 'jane') || 
-                (username === 'michael' && password === 'michael')) {
-        mockUser = { id: '2', name: 'Dr. Jane Smith', role: 'doctor' };
+        return;
+      }
+      
+      // If not admin, check doctors and patients from the API
+      const doctors = await fetchDoctors();
+      const patients = await fetchPatients();
+      
+      // Check if the credentials match any doctor
+      const matchedDoctor = doctors.find(
+        doctor => doctor.username?.toLowerCase() === username.toLowerCase() && 
+                  doctor.password === password
+      );
+      
+      if (matchedDoctor) {
+        mockUser = { 
+          id: matchedDoctor.id, 
+          name: matchedDoctor.name, 
+          role: 'doctor',
+          profileImage: matchedDoctor.profileImage 
+        };
+        setUser(mockUser);
+        localStorage.setItem('healthcareUser', JSON.stringify(mockUser));
         navigate('/doctor-dashboard');
+        return;
+      }
+      
+      // Check if the credentials match any patient
+      const matchedPatient = patients.find(
+        patient => patient.username?.toLowerCase() === username.toLowerCase() && 
+                   patient.password === password
+      );
+      
+      if (matchedPatient) {
+        mockUser = { 
+          id: matchedPatient.id, 
+          name: matchedPatient.name, 
+          role: 'patient',
+          profileImage: matchedPatient.profileImage 
+        };
+        setUser(mockUser);
+        localStorage.setItem('healthcareUser', JSON.stringify(mockUser));
+        navigate('/patient-dashboard');
+        return;
+      }
+      
+      // For backward compatibility, keep the old static user checks
+      if (username === 'doctor' && password === 'password' || 
+          (username === 'jane' && password === 'jane') || 
+          (username === 'michael' && password === 'michael')) {
+        mockUser = { id: '2', name: 'Dr. Jane Smith', role: 'doctor' };
+        setUser(mockUser);
+        localStorage.setItem('healthcareUser', JSON.stringify(mockUser));
+        navigate('/doctor-dashboard');
+        return;
       } else if (username === 'patient' && password === 'password' || 
                 (username === 'john' && password === 'john')) {
         mockUser = { id: '3', name: 'John Doe', role: 'patient' };
+        setUser(mockUser);
+        localStorage.setItem('healthcareUser', JSON.stringify(mockUser));
         navigate('/patient-dashboard');
-      } else {
-        throw new Error('Invalid credentials');
+        return;
       }
       
-      setUser(mockUser);
-      localStorage.setItem('healthcareUser', JSON.stringify(mockUser));
+      // If we get here, no valid user was found
+      throw new Error('Invalid credentials');
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
