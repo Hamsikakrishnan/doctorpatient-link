@@ -19,8 +19,17 @@ const DoctorDashboard: React.FC = () => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // In a real app, we'd use the logged-in doctor's ID
-        const doctorId = 'd1'; // Mock ID for demo purposes
+        if (!user || !user.id) {
+          toast({
+            title: 'Error',
+            description: 'User information not found. Please log in again.',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        // Use the logged-in doctor's ID
+        const doctorId = user.id;
         const [doctorInfo, patientsData] = await Promise.all([
           fetchDoctorById(doctorId),
           fetchPatientsByDoctor(doctorId),
@@ -43,7 +52,7 @@ const DoctorDashboard: React.FC = () => {
     };
 
     loadData();
-  }, []);
+  }, [user]);
 
   const handlePatientClick = (patient: Patient) => {
     setSelectedPatient(patient);
@@ -107,7 +116,7 @@ const DoctorDashboard: React.FC = () => {
                     filteredPatients.map(patient => (
                       <div 
                         key={patient.id} 
-                        onClick={() => handlePatientClick(patient)}
+                        onClick={() => setSelectedPatient(patient)}
                         className={`cursor-pointer transition-all ${
                           selectedPatient?.id === patient.id
                             ? 'ring-2 ring-healthcare-500'
@@ -154,7 +163,13 @@ const DoctorDashboard: React.FC = () => {
                     Medical Records
                   </h3>
                   <button
-                    onClick={handleNewPrescription}
+                    onClick={() => {
+                      setShowPrescriptionForm(true);
+                      toast({
+                        title: 'Feature coming soon',
+                        description: 'New prescription functionality will be available soon',
+                      });
+                    }}
                     className="bg-healthcare-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-healthcare-700 transition-colors flex items-center gap-2"
                   >
                     <FileText className="h-4 w-4" />

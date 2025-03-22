@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import PrescriptionCard from '../components/PrescriptionCard';
@@ -20,8 +21,17 @@ const PatientDashboard: React.FC = () => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // In a real app, we'd use the logged-in patient's ID
-        const patientId = 'p1'; // Mock ID for demo purposes
+        if (!user || !user.id) {
+          toast({
+            title: 'Error',
+            description: 'User information not found. Please log in again.',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        // Use the logged-in patient's ID
+        const patientId = user.id;
         const [patientData, prescriptionsData, labTestsData] = await Promise.all([
           fetchPatientById(patientId),
           fetchPrescriptionsByPatient(patientId),
@@ -46,7 +56,7 @@ const PatientDashboard: React.FC = () => {
     };
 
     loadData();
-  }, []);
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-healthcare-50 flex flex-col page-transition">
@@ -63,8 +73,12 @@ const PatientDashboard: React.FC = () => {
             <div className="glass-card rounded-lg p-6 mb-6">
               <div className="flex flex-col items-center">
                 <div className="h-20 w-20 rounded-full overflow-hidden bg-healthcare-100 flex items-center justify-center mb-4">
-                  {patient?.profileImage ? (
-                    <img src={patient.profileImage} alt={patient.name} className="h-full w-full object-cover" />
+                  {patient?.profileImage || user?.profileImage ? (
+                    <img 
+                      src={patient?.profileImage || user?.profileImage} 
+                      alt={patient?.name || user?.name || "Profile"} 
+                      className="h-full w-full object-cover" 
+                    />
                   ) : (
                     <UserRound className="h-10 w-10 text-healthcare-500" />
                   )}
@@ -76,11 +90,11 @@ const PatientDashboard: React.FC = () => {
                   <div className="space-y-2">
                     <p className="text-sm">
                       <span className="font-medium text-gray-600">Doctor:</span>{' '}
-                      <span className="text-healthcare-700">Dr. Jane Smith</span>
+                      <span className="text-healthcare-700">{patient?.doctorName || "Dr. Jane Smith"}</span>
                     </p>
                     <p className="text-sm">
                       <span className="font-medium text-gray-600">Medical History:</span>{' '}
-                      <span className="text-gray-700">{patient?.medicalHistory}</span>
+                      <span className="text-gray-700">{patient?.medicalHistory || "No medical history recorded"}</span>
                     </p>
                   </div>
                 </div>

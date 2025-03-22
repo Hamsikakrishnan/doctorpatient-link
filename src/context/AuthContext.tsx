@@ -109,20 +109,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       // For backward compatibility, keep the old static user checks
-      if (username === 'doctor' && password === 'password' || 
-          (username === 'jane' && password === 'jane') || 
-          (username === 'michael' && password === 'michael')) {
-        mockUser = { id: '2', name: 'Dr. Jane Smith', role: 'doctor' };
+      if (username === 'doctor' && password === 'password') {
+        mockUser = { id: 'd1', name: 'Dr. Jane Smith', role: 'doctor' };
         setUser(mockUser);
         localStorage.setItem('healthcareUser', JSON.stringify(mockUser));
         navigate('/doctor-dashboard');
         return;
-      } else if (username === 'patient' && password === 'password' || 
-                (username === 'john' && password === 'john')) {
-        mockUser = { id: '3', name: 'John Doe', role: 'patient' };
+      } else if (username === 'patient' && password === 'password') {
+        mockUser = { id: 'p1', name: 'John Doe', role: 'patient' };
         setUser(mockUser);
         localStorage.setItem('healthcareUser', JSON.stringify(mockUser));
         navigate('/patient-dashboard');
+        return;
+      } else if (username === 'jane' && password === 'jane') {
+        mockUser = { id: 'd1', name: 'Dr. Jane Smith', role: 'doctor' };
+        setUser(mockUser);
+        localStorage.setItem('healthcareUser', JSON.stringify(mockUser));
+        navigate('/doctor-dashboard');
+        return;
+      } else if (username === 'john' && password === 'john') {
+        mockUser = { id: 'p1', name: 'John Doe', role: 'patient' };
+        setUser(mockUser);
+        localStorage.setItem('healthcareUser', JSON.stringify(mockUser));
+        navigate('/patient-dashboard');
+        return;
+      } else if (username === 'michael' && password === 'michael') {
+        mockUser = { id: 'd2', name: 'Dr. Michael Johnson', role: 'doctor' };
+        setUser(mockUser);
+        localStorage.setItem('healthcareUser', JSON.stringify(mockUser));
+        navigate('/doctor-dashboard');
         return;
       }
       
