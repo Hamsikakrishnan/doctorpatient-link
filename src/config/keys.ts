@@ -5,6 +5,7 @@
 interface ConfigKeys {
   MONGODB_URI?: string;
   GEMINI_API_KEY?: string;
+  OPENAI_API_KEY?: string;
 }
 
 // Initial empty config
