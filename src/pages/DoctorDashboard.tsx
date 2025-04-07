@@ -4,8 +4,16 @@ import Navbar from '../components/Navbar';
 import PatientCard from '../components/PatientCard';
 import PrescriptionForm from '../components/PrescriptionForm';
 import { useAuth } from '../context/AuthContext';
-import { fetchPatientsByDoctor, fetchDoctorById, createPrescription, Patient, Doctor } from '../utils/api';
-import { UserRound, Search, ClipboardList, FileText } from 'lucide-react';
+import { 
+  fetchPatientsByDoctor, 
+  fetchDoctorById, 
+  fetchPrescriptionsByPatient,
+  createPrescription, 
+  Patient, 
+  Doctor, 
+  Prescription 
+} from '../utils/api';
+import { UserRound, Search, ClipboardList, FileText, Plus } from 'lucide-react';
 import { toast } from '../hooks/use-toast';
 
 const DoctorDashboard: React.FC = () => {
@@ -16,6 +24,8 @@ const DoctorDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [isPrescriptionsLoading, setIsPrescriptionsLoading] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -56,6 +66,32 @@ const DoctorDashboard: React.FC = () => {
     loadData();
   }, [user]);
 
+  // Load patient prescriptions when a patient is selected
+  useEffect(() => {
+    const loadPrescriptions = async () => {
+      if (selectedPatient) {
+        setIsPrescriptionsLoading(true);
+        try {
+          const patientPrescriptions = await fetchPrescriptionsByPatient(selectedPatient.id);
+          setPrescriptions(patientPrescriptions);
+        } catch (error) {
+          console.error('Failed to load prescriptions:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to load patient prescriptions',
+            variant: 'destructive',
+          });
+        } finally {
+          setIsPrescriptionsLoading(false);
+        }
+      } else {
+        setPrescriptions([]);
+      }
+    };
+
+    loadPrescriptions();
+  }, [selectedPatient]);
+
   const handlePatientClick = (patient: Patient) => {
     setSelectedPatient(patient);
   };
@@ -73,6 +109,12 @@ const DoctorDashboard: React.FC = () => {
         title: 'Success',
         description: 'Prescription has been created successfully',
       });
+      // Reload prescriptions after creating a new one
+      if (selectedPatient) {
+        const updatedPrescriptions = await fetchPrescriptionsByPatient(selectedPatient.id);
+        setPrescriptions(updatedPrescriptions);
+      }
+      setShowPrescriptionForm(false);
     } catch (error) {
       console.error('Failed to create prescription:', error);
       toast({
@@ -87,6 +129,14 @@ const DoctorDashboard: React.FC = () => {
     patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     patient.medicalHistory.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
   return (
     <div className="min-h-screen bg-healthcare-50 flex flex-col page-transition">
@@ -177,22 +227,66 @@ const DoctorDashboard: React.FC = () => {
                 <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                   <h3 className="font-medium text-healthcare-800 flex items-center gap-2">
                     <ClipboardList className="h-5 w-5" />
-                    Medical Records
+                    Prescriptions
                   </h3>
                   <button
                     onClick={handleNewPrescription}
                     className="bg-healthcare-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-healthcare-700 transition-colors flex items-center gap-2"
                   >
-                    <FileText className="h-4 w-4" />
+                    <Plus className="h-4 w-4" />
                     New Prescription
                   </button>
                 </div>
                 
-                <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                  <p className="mb-1">No prescriptions yet</p>
-                  <p className="text-sm text-gray-400">Create a new prescription to get started</p>
-                </div>
+                {isPrescriptionsLoading ? (
+                  <div className="animate-pulse space-y-3">
+                    {[...Array(2)].map((_, i) => (
+                      <div key={i} className="h-32 bg-gray-100 rounded-lg"></div>
+                    ))}
+                  </div>
+                ) : prescriptions.length > 0 ? (
+                  <div className="space-y-4">
+                    {prescriptions.map((prescription) => (
+                      <div key={prescription.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                        <div className="flex justify-between items-center mb-3">
+                          <div className="font-medium text-healthcare-700 flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            Prescription
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {formatDate(prescription.date)}
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500 mb-2">Medications</h4>
+                            <ul className="space-y-2">
+                              {prescription.medications.map((med, idx) => (
+                                <li key={idx} className="bg-gray-50 rounded-md p-2 text-sm">
+                                  <span className="font-medium">{med.name}</span>: {med.dosage}, {med.frequency}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500 mb-2">Notes</h4>
+                            <p className="text-sm text-gray-700 bg-gray-50 rounded-md p-2">
+                              {prescription.notes}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                    <p className="mb-1">No prescriptions yet</p>
+                    <p className="text-sm text-gray-400">Create a new prescription to get started</p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="glass-card rounded-lg flex items-center justify-center h-64">
